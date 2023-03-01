@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import * as React from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -9,73 +9,71 @@ import {
   Pressable,
   Dimensions,
   ScrollView,
+  Button,
 } from "react-native";
+import { ListItem, Avatar } from "react-native-elements";
 import firebase from "../database/firebase.js";
-import { collection, addDoc } from "firebase/firestore";
+import {
+  collection,
+  query,
+  getDocs,
+  getDoc,
+  where,
+  doc,
+} from "firebase/firestore";
 const ScreenHeight = Dimensions.get("window").height;
 const ScreenWidth = Dimensions.get("window").width;
-export default function SignUpScreen({ navigation }) {
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [username, setUserName] = React.useState("");
-  const handlerCreateAccount = async () => {
-    try {
-      if (email == "" || password == "" || username == "") {
-        return alert("Provide a name / password / username");
-      }
-      const docRef = await addDoc(collection(firebase.db, "users"), {
-        email,
-        password,
-        username
-      });
-      console.log("Document written with ID: ", docRef.id);
-      alert("user saved");
-      return navigation.navigate("UsersList")
-    } catch (e) {
-      return console.error("Error adding document: ", e);
-    }
-    
+export default function UserDetailScreen(props) {
+  const [user, setUser] = useState({
+    id: "",
+    username: "",
+    email: "",
+    password: "",
+  });
+  const handleTextChange = (value, prop) => {
+    setUser({ ...user, [prop]: value });
   };
+  //traer data de firebase
+  const getUserById = async (id) => {
+    const docRef = doc(firebase.db, "users", id);
+    const docSnap = await getDoc(docRef);
+    const userFetched = docSnap.data();
+    setUser({ ...userFetched, id: docSnap.id });
+  };
+  useEffect(() => {
+    getUserById(props.route.params.userId);    
+  }, []);
+
   return (
     <ScrollView
       style={styles.scrollview}
       contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
     >
       <View style={styles.container}>
-        <Image
-          style={styles.logo}
-          source={require("../assets/icons8-mental-64.png")}
-        />
-        <Text style={styles.title}>Sign Up</Text>
-        <Text style={styles.subtitle}>Create an account</Text>
+        <Text style={styles.subtitle}>Edit or delete profile:</Text>
         <TextInput
-          onChangeText={(e) => {
-            setUserName(e);
-            console.log(e);
-          }}
+          value={user.username}
+          onChangeText={(value) => handleTextChange(value, "username")}
           style={styles.textInput}
           placeholder="username"
         />
         <TextInput
-          onChangeText={(e) => {
-            setEmail(e);
-            console.log(e);
-          }}
+          value={user.email}
+          onChangeText={(value) => handleTextChange(value, "email")}
           style={styles.textInput}
           placeholder="example@mail.com"
         />
         <TextInput
-          onChangeText={(e) => {
-            setPassword(e);
-            console.log(e);
-          }}
+          value={user.password}
+          onChangeText={(value) => handleTextChange(value, "password")}
           style={styles.textInput}
           placeholder="password"
         />
-        <Pressable onPress={handlerCreateAccount} style={styles.button}>
-          <Text style={styles.text}>
-            register
-          </Text>
+        <Pressable onPress={() => alert("works!")} style={styles.button}>
+          <Text style={styles.text}>update</Text>
+        </Pressable>
+        <Pressable onPress={() => alert("works!")} style={styles.buttonDelete}>
+          <Text style={styles.text}>delete</Text>
         </Pressable>
       </View>
     </ScrollView>
@@ -95,7 +93,7 @@ const styles = StyleSheet.create({
     width: ScreenWidth,
     justifyContent: "flex-start",
     alignItems: "center",
-    paddingTop: 30,
+    width: "100%",
   },
   title: {
     fontSize: 45,
@@ -135,6 +133,16 @@ const styles = StyleSheet.create({
     elevation: 3,
     backgroundColor: "#34f818",
   },
+  buttonDelete: {
+    marginTop: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 30,
+    elevation: 3,
+    backgroundColor: "#ff244d",
+  },
   text: {
     fontSize: 16,
     lineHeight: 21,
@@ -142,11 +150,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.25,
     color: "white",
   },
-  video: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    bottom: 0,
-    right: 0,
+  listItem: {
+    width: "100%",
   },
 });
